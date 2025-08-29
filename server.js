@@ -218,13 +218,14 @@ app.get("/hasBoot", authenticateToken, (req, res) => {
 });
 
 app.post("/updateBoots", async (req, res) => {
-  console.log("Boot Updating — route triggered"); 
   const yesterdayDate = new Date();
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+
   const yyyy = yesterdayDate.getFullYear();
   const mm = String(yesterdayDate.getMonth() + 1).padStart(2, '0');
   const dd = String(yesterdayDate.getDate()).padStart(2, '0');
-  const yesterday = `${yyyy}-${mm}-${dd}`;
+
+  const yesterday = `${yyyy}-${mm}-${dd}`; // stays local
   console.log("Yesterday Time (local):", yesterday);
 
   // ดึง user ทั้งหมด
@@ -263,7 +264,17 @@ app.post("/updateBoots", async (req, res) => {
 
 app.get("/testCron", (req, res) => {
   console.log("Cron route hit");
-  res.json({ message: "Cron route works" });
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+
+  const yyyy = yesterdayDate.getFullYear();
+  const mm = String(yesterdayDate.getMonth() + 1).padStart(2, '0');
+  const dd = String(yesterdayDate.getDate()).padStart(2, '0');
+
+  const yesterday = `${yyyy}-${mm}-${dd}`; // stays local
+  console.log("Yesterday Time (local):", yesterday);
+
+  res.json({ message: yesterday });
 });
 
 app.get("/profile", authenticateToken, (req, res) => {
