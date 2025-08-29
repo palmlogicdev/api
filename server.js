@@ -4,6 +4,7 @@ const mysql = require("mysql");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const authenticateToken = require("./middleware/authMiddleware");
+require('dotenv').config();
 
 const app = express();
 app.use(cors());
