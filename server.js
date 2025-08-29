@@ -1,0 +1,262 @@
+const express = require("express");
+const cors = require("cors");
+const mysql = require("mysql");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const authenticateToken = require("./middleware/authMiddleware");
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+const SECRET_KEY = process.env.JWT_SECRET;
+
+const db = mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+});
+
+db.connect((err) => {
+  if (err) {
+    console.error("DB connection failed:", err);
+  } else {
+    console.log("DB connected");
+  }
+});
+
+function getDate() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  const todayStr = `${year}-${month}-${day}`;
+
+  return todayStr;
+}
+
+app.post("/register", async (req, res) => {
+  const { username, email, password } = req.body;
+  const userRole = "user";
+
+  try {
+    const checkEmail = "SELECT * FROM users WHERE email = ?";
+    db.query(checkEmail, [email], async (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Database problem" });
+      }
+
+      if (results.length > 0) {
+        return res.status(400).json({ message: "Email is already in used" });
+      }
+
+      const saltRound = 10;
+      const passwordHash = await bcrypt.hash(password, saltRound);
+
+      const insertSql =
+        "INSERT INTO users (username, email, password, user_role) VALUES(?)";
+      const value = [username, email, passwordHash, userRole];
+      db.query(insertSql, [value], (err, result) => {
+        if (err) {
+          console.error(err);
+          return res.json({ message: "Error until registing" });
+        }
+        return res.status(201).json({ message: "Registered successfully" });
+      });
+    });
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ message: "Server error! CONTACT palmlogicdev@gmail.com" });
+  }
+});
+
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const checkEmail = "SELECT * FROM users WHERE email = ?";
+    db.query(checkEmail, [email], async (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Database problem" });
+      }
+
+      if (results.length <= 0) {
+        return res
+          .status(400)
+          .json({
+            message: "Looks like you're new here! Please register first.",
+          });
+      }
+
+      const user = results[0];
+      console.log(user);
+
+      const match = await bcrypt.compare(password, user.password);
+      if (!match) {
+        return res.status(400).json({ message: "Invalid password" });
+      }
+
+      const token = jwt.sign(
+        { id: user.user_id, email: user.email, role: user.user_role },
+        SECRET_KEY,
+        { expiresIn: "1y" }
+      );
+      return res.json({ message: "Login Successful", token });
+    });
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ message: "Server error please CONTACT palmlogicdev@gmail.com" });
+  }
+});
+
+app.post("/timer", authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const { timer_amount } = req.body;
+
+  if (!timer_amount || isNaN(timer_amount)) {
+    return res.status(400).json({ message: "Invalid timer amount" });
+  }
+
+  const sql = "INSERT INTO timer_histories (user_id, time_amount) VALUES(?, ?)";
+  db.query(sql, [userId, timer_amount], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    const today = getDate();
+    const cheakDate = "SELECT * FROM boots WHERE user_id = ? AND date = ?";
+    db.query(cheakDate, [userId, today], (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      if (result.length > 0) {
+        return res.json({
+            message: "Timer logged. Boot already recorded today 🔥",
+            timer_id: results.insertId
+        });
+      }
+
+      let steak = 1;
+      const sqlAddBoot = "INSERT INTO boots (user_id, date, streak) VALUES(?, ?, ?)";
+      db.query(sqlAddBoot, [userId, today, steak], (err2) => {
+        if (err2) {
+          console.error(err2);
+          return res.status(500).json({ error: err2.message });
+        }
+
+        const sqlBoots =
+          "SELECT current_boots, email FROM users WHERE user_id = ?";
+        db.query(sqlBoots, [userId], (err3, result3) => {
+          if (err3) {
+            console.error(err3);
+            return res.status(500).json({ error: err3.message });
+          }
+
+          let user = null;
+          if (result3.length > 0) {
+            user = result3[0];
+          } else {
+            return res.json({ error: "Didnt founded user" });
+          }
+
+          let current_boots = user.current_boots + 1;
+          const sqlAddBoots =
+            "UPDATE users SET current_boots = ? WHERE user_id = ?";
+          db.query(sqlAddBoots, [current_boots, userId], (err4) => {
+            if (err4) {
+              console.error(err4);
+              return res.status(500).json({ error: err4.message });
+            }
+
+            const now = new Date();
+            const midnight = new Date(now);
+            midnight.setHours(24, 0, 0, 0);
+
+            const secondUntilMidnight = Math.floor((midnight - now) / 1000);
+
+            const bootsToken = jwt.sign(
+              { id: userId, email: user.email },
+              SECRET_KEY,
+              { expiresIn: secondUntilMidnight }
+            );
+
+            return res.json({
+              message: "🔥 Boot logged successfully",
+              boot: current_boots,
+              bootsToken,
+            });
+          });
+        });
+      });
+    });
+  });
+});
+
+app.get("/hasBoot", authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const today = new Date().toISOString().slice(0,10);
+
+  const sql = "SELECT * FROM boots WHERE user_id = ? AND date = ?";
+  db.query(sql, [userId, today], (err, result) => {
+    if(err) return res.status(500).json({error: err.message});
+    res.json({ hasBoot: result.length > 0 });
+  });
+});
+
+app.post("/updateBoots", authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+  const checkYesterday = "SELECT * FROM boots WHERE user_id = ? AND date = ?";
+  db.query(checkYesterday, [userId, yesterday], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (results.length > 0) {
+      return res.json({ message: "Streak is still active 🔥" });
+    }
+
+    let newStreak = 0;
+    const updateStreak = "UPDATE users SET current_boots = ? WHERE user_id = ?";
+    db.query(updateStreak, [newStreak, userId], (err2, results2) => {
+      if (err2) {
+        return res.status(500).json({ error: err2.message });
+      }
+
+      return res.json({ message: "Streak reset ⚡", current_boots: newStreak });
+    });
+  });
+});
+
+app.get("/profile", authenticateToken, (req, res) => {
+  const userId = req.user.id;
+
+  const sql =
+    "SELECT user_id, username, email, user_role FROM users WHERE user_id = ?";
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Database problem" });
+    }
+
+    if (results.length <= 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.json({ user: results[0] });
+  });
+});
+
+app.listen(3000, () => {
+  console.log("App run in port 3000");
+});
