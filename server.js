@@ -57,8 +57,8 @@ app.post("/register", async (req, res) => {
       const passwordHash = await bcrypt.hash(password, saltRound);
 
       const insertSql =
-        "INSERT INTO users (username, email, password, user_role) VALUES (?, ?, ?, ?)";
-      const value = [username, email, passwordHash, userRole];
+        "INSERT INTO users (username, email, password, user_role) VALUES (?, ?, ?, ?, ?)";
+      const value = [username, email, passwordHash, userRole, 0];
       db.query(insertSql, [value], (err, result) => {
         if (err) {
           console.error(err);
@@ -258,7 +258,7 @@ app.get("/profile", authenticateToken, (req, res) => {
   });
 });
 
-const PORT = process.env.DB_PORT || 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`App running on port ${PORT}`);
 });
