@@ -255,6 +255,11 @@ app.post("/updateBoots", async (req, res) => {
   });
 });
 
+app.get("/testCron", (req, res) => {
+  console.log("Cron route hit");
+  res.json({ message: "Cron route works" });
+});
+
 app.get("/profile", authenticateToken, (req, res) => {
   const userId = req.user.id;
 
