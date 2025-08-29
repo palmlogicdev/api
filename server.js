@@ -130,7 +130,7 @@ app.post("/timer", authenticateToken, (req, res) => {
     return res.status(400).json({ message: "Invalid timer amount" });
   }
 
-  const sql = "INSERT INTO timer_histories (user_id, time_amount) VALUES(?, ?)";
+  const sql = "INSERT INTO timer_histories (user_id, timer_amount) VALUES(?, ?)";
   db.query(sql, [userId, timer_amount], (err, results) => {
     if (err) {
       console.error(err);
