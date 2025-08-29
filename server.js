@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const mysql = require("mysql");
+const mysql = require("mysql2");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const authenticateToken = require("./middleware/authMiddleware");
@@ -57,7 +57,7 @@ app.post("/register", async (req, res) => {
       const passwordHash = await bcrypt.hash(password, saltRound);
 
       const insertSql =
-        "INSERT INTO users (username, email, password, user_role) VALUES(?)";
+        "INSERT INTO users (username, email, password, user_role) VALUES (?, ?, ?, ?)";
       const value = [username, email, passwordHash, userRole];
       db.query(insertSql, [value], (err, result) => {
         if (err) {
@@ -104,7 +104,7 @@ app.post("/login", async (req, res) => {
       const token = jwt.sign(
         { id: user.user_id, email: user.email, role: user.user_role },
         SECRET_KEY,
-        { expiresIn: "1y" }
+        { expiresIn: "30d" }
       );
       return res.json({ message: "Login Successful", token });
     });
@@ -166,7 +166,7 @@ app.post("/timer", authenticateToken, (req, res) => {
           if (result3.length > 0) {
             user = result3[0];
           } else {
-            return res.json({ error: "Didnt founded user" });
+            return res.json({ error: "User not found" });
           }
 
           let current_boots = user.current_boots + 1;
