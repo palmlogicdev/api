@@ -220,6 +220,7 @@ app.get("/hasBoot", authenticateToken, (req, res) => {
 app.post("/updateBoots", async (req, res) => {
   console.log("Boot Updating — route triggered"); 
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  console.log("Yesterday Time:", yesterday);
 
   // ดึง user ทั้งหมด
   const getUsers = "SELECT user_id FROM users";
@@ -255,7 +256,7 @@ app.post("/updateBoots", async (req, res) => {
   });
 });
 
-app.all("/testCron", (req, res) => {
+app.get("/testCron", (req, res) => {
   console.log("Cron route hit");
   res.json({ message: "Cron route works" });
 });
