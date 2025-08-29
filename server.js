@@ -219,8 +219,13 @@ app.get("/hasBoot", authenticateToken, (req, res) => {
 
 app.post("/updateBoots", async (req, res) => {
   console.log("Boot Updating — route triggered"); 
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  console.log("Yesterday Time:", yesterday);
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yyyy = yesterdayDate.getFullYear();
+  const mm = String(yesterdayDate.getMonth() + 1).padStart(2, '0');
+  const dd = String(yesterdayDate.getDate()).padStart(2, '0');
+  const yesterday = `${yyyy}-${mm}-${dd}`;
+  console.log("Yesterday Time (local):", yesterday);
 
   // ดึง user ทั้งหมด
   const getUsers = "SELECT user_id FROM users";
