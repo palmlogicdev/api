@@ -5,7 +5,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const authenticateToken = require("./middleware/authMiddleware");
 require('dotenv').config();
-import { utcToZonedTime, format } from 'date-fns-tz';
+const { utcToZonedTime, format } = require('date-fns-tz');
 
 const app = express();
 app.use(cors());
