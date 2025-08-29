@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const authenticateToken = require("./middleware/authMiddleware");
 require('dotenv').config();
+import { utcToZonedTime, format } from 'date-fns-tz';
 
 const app = express();
 app.use(cors());
@@ -218,15 +219,15 @@ app.get("/hasBoot", authenticateToken, (req, res) => {
 });
 
 app.post("/updateBoots", async (req, res) => {
-  const yesterdayDate = new Date();
-  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const timeZone = 'Asia/Bangkok'; // Bangkok timezone
+  const now = new Date();
+  const zonedNow = utcToZonedTime(now, timeZone);
 
-  const yyyy = yesterdayDate.getFullYear();
-  const mm = String(yesterdayDate.getMonth() + 1).padStart(2, '0');
-  const dd = String(yesterdayDate.getDate()).padStart(2, '0');
+  const yesterday = new Date(zonedNow);
+  yesterday.setDate(yesterday.getDate() - 1);
 
-  const yesterday = `${yyyy}-${mm}-${dd}`; // stays local
-  console.log("Yesterday Time (local):", yesterday);
+  const formattedYesterday = format(yesterday, 'yyyy-MM-dd', { timeZone });
+  console.log("Yesterday (Bangkok):", formattedYesterday);
 
   // ดึง user ทั้งหมด
   const getUsers = "SELECT user_id FROM users";
@@ -238,7 +239,7 @@ app.post("/updateBoots", async (req, res) => {
 
       // ตรวจสอบว่าผู้ใช้ทำ boot เมื่อวานหรือไม่
       const checkYesterday = "SELECT * FROM boots WHERE user_id = ? AND date = ?";
-      db.query(checkYesterday, [userId, yesterday], (err, results) => {
+      db.query(checkYesterday, [userId, formattedYesterday], (err, results) => {
         if (err) return console.error(err);
 
         if (results.length === 0) {
