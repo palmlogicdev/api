@@ -160,8 +160,7 @@ app.post("/timer", authenticateToken, (req, res) => {
           return res.status(500).json({ error: err2.message });
         }
 
-        const sqlBoots =
-          "SELECT current_boots, email FROM users WHERE user_id = ?";
+        const sqlBoots = "SELECT current_boots, email FROM users WHERE user_id = ?";
         db.query(sqlBoots, [userId], (err3, result3) => {
           if (err3) {
             console.error(err3);
@@ -176,8 +175,7 @@ app.post("/timer", authenticateToken, (req, res) => {
           }
 
           let current_boots = user.current_boots + 1;
-          const sqlAddBoots =
-            "UPDATE users SET current_boots = ? WHERE user_id = ?";
+          const sqlAddBoots = "UPDATE users SET current_boots = ? WHERE user_id = ?";
           db.query(sqlAddBoots, [current_boots, userId], (err4) => {
             if (err4) {
               console.error(err4);
@@ -220,6 +218,7 @@ app.get("/hasBoot", authenticateToken, (req, res) => {
 });
 
 app.post("/updateBoots", async (req, res) => {
+  console.log("Boot Updating");
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
   // ดึง user ทั้งหมด
