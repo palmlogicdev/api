@@ -240,7 +240,14 @@ app.post("/updateBoots", authenticateToken, (req, res) => {
         return res.status(500).json({ error: err2.message });
       }
 
-      return res.json({ message: "Streak reset ⚡", current_boots: newStreak });
+      const deleteBoots = "DELETE FROM boots WHERE user_id = ?";
+      db.query(deleteBoots, [userId], (err3) => {
+        if (err3) {
+          return res.status(500).json({ error: err3.message });
+        }
+
+        return res.json({ message: "Streak reset ⚡ and boots cleared", current_boots: newStreak });
+      });
     });
   });
 });
