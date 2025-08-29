@@ -255,7 +255,7 @@ app.post("/updateBoots", async (req, res) => {
   });
 });
 
-app.get("/testCron", (req, res) => {
+app.all("/testCron", (req, res) => {
   console.log("Cron route hit");
   res.json({ message: "Cron route works" });
 });
