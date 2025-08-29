@@ -219,36 +219,40 @@ app.get("/hasBoot", authenticateToken, (req, res) => {
   });
 });
 
-app.post("/updateBoots", authenticateToken, (req, res) => {
-  const userId = req.user.id;
+app.post("/updateBoots", async (req, res) => {
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
-  const checkYesterday = "SELECT * FROM boots WHERE user_id = ? AND date = ?";
-  db.query(checkYesterday, [userId, yesterday], (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
+  // ดึง user ทั้งหมด
+  const getUsers = "SELECT user_id FROM users";
+  db.query(getUsers, (err, users) => {
+    if (err) return res.status(500).json({ error: err.message });
 
-    if (results.length > 0) {
-      return res.json({ message: "Streak is still active 🔥" });
-    }
+    users.forEach(user => {
+      const userId = user.user_id;
 
-    let newStreak = 0;
-    const updateStreak = "UPDATE users SET current_boots = ? WHERE user_id = ?";
-    db.query(updateStreak, [newStreak, userId], (err2, results2) => {
-      if (err2) {
-        return res.status(500).json({ error: err2.message });
-      }
+      // ตรวจสอบว่าผู้ใช้ทำ boot เมื่อวานหรือไม่
+      const checkYesterday = "SELECT * FROM boots WHERE user_id = ? AND date = ?";
+      db.query(checkYesterday, [userId, yesterday], (err, results) => {
+        if (err) return console.error(err);
 
-      const deleteBoots = "DELETE FROM boots WHERE user_id = ?";
-      db.query(deleteBoots, [userId], (err3) => {
-        if (err3) {
-          return res.status(500).json({ error: err3.message });
+        if (results.length === 0) {
+          // ถ้าไม่มี boot เมื่อวาน → reset streak และลบ boot ทั้งหมด
+          const updateStreak = "UPDATE users SET current_boots = 0 WHERE user_id = ?";
+          db.query(updateStreak, [userId], (err2) => {
+            if (err2) return console.error(err2);
+
+            const deleteBoots = "DELETE FROM boots WHERE user_id = ?";
+            db.query(deleteBoots, [userId], (err3) => {
+              if (err3) return console.error(err3);
+
+              console.log(`User ${userId} streak reset & boots deleted`);
+            });
+          });
         }
-
-        return res.json({ message: "Streak reset ⚡ and boots cleared", current_boots: newStreak });
       });
     });
+
+    res.json({ message: "Update streak process done" });
   });
 });
 
