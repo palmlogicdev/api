@@ -218,7 +218,7 @@ app.get("/hasBoot", authenticateToken, (req, res) => {
 });
 
 app.post("/updateBoots", async (req, res) => {
-  console.log("Boot Updating");
+  console.log("Boot Updating — route triggered"); 
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
   // ดึง user ทั้งหมด
