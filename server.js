@@ -63,7 +63,7 @@ app.post("/register", async (req, res) => {
       const passwordHash = await bcrypt.hash(password, saltRound);
 
       const insertSql =
-        "INSERT INTO users (username, email, password, user_role) VALUES (?, ?, ?, ?, ?)";
+        "INSERT INTO users (username, email, password, user_role, current_boots) VALUES (?, ?, ?, ?, ?)";
       const value = [username, email, passwordHash, userRole, 0];
       db.query(insertSql, [value], (err, result) => {
         if (err) {
