@@ -5,7 +5,8 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const authenticateToken = require("./middleware/authMiddleware");
 require('dotenv').config();
-const { utcToZonedTime, format } = require('date-fns-tz');
+const dateFnsTz = require('date-fns-tz');
+
 
 const app = express();
 app.use(cors());
@@ -221,12 +222,12 @@ app.get("/hasBoot", authenticateToken, (req, res) => {
 app.post("/updateBoots", async (req, res) => {
   const timeZone = 'Asia/Bangkok'; // Bangkok timezone
   const now = new Date();
-  const zonedNow = utcToZonedTime(now, timeZone);
+  const zonedNow = dateFnsTz.toZonedTime(now, timeZone);
 
   const yesterday = new Date(zonedNow);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  const formattedYesterday = format(yesterday, 'yyyy-MM-dd', { timeZone });
+  const formattedYesterday = dateFnsTz.format(yesterday, 'yyyy-MM-dd', { timeZone });
   console.log("Yesterday (Bangkok):", formattedYesterday);
 
   // ดึง user ทั้งหมด
